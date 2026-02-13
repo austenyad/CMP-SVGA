@@ -1,6 +1,6 @@
 # CMP-SVGA
 
-A Compose Multiplatform SVGA animation player library. Play [SVGA](http://svga.io/) animations natively on Android and iOS using a single codebase.
+A Compose Multiplatform SVGA animation player library. Play [SVGA](https://svga.dev/index.html) animations natively on Android and iOS using a single codebase.
 
 [中文文档](README_CN.md)
 

@@ -1,6 +1,6 @@
 # CMP-SVGA
 
-基于 Compose Multiplatform 的 SVGA 动画播放库。使用一套代码在 Android 和 iOS 上原生播放 [SVGA](http://svga.io/) 动画。
+基于 Compose Multiplatform 的 SVGA 动画播放库。使用一套代码在 Android 和 iOS 上原生播放 [SVGA](https://svga.dev/index.html) 动画。
 
 [English](README.md)
 
