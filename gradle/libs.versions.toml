@@ -1,0 +1,39 @@
+[versions]
+kotlin = "2.0.21"
+compose-multiplatform = "1.6.11"
+agp = "8.5.2"
+pbandk = "0.16.0"
+kotest = "5.9.1"
+okio = "3.9.1"
+coroutines = "1.8.1"
+activity-compose = "1.9.3"
+
+[libraries]
+# pbandk - Protobuf
+pbandk-runtime = { module = "pro.streem.pbandk:pbandk-runtime", version.ref = "pbandk" }
+
+# Kotest - Testing
+kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest" }
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+
+# Okio - Cross-platform file I/O
+okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
+
+# Coroutines
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Kotlin test
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+# Android Activity Compose
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "compose-multiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidApplication = { id = "com.android.application", version.ref = "agp" }

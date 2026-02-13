@@ -1,0 +1,135 @@
+syntax = "proto2";
+
+package com.yad.svga.proto;
+
+// 动画参数
+message MovieParams {
+    optional float viewBoxWidth = 1;   // 画布宽
+    optional float viewBoxHeight = 2;  // 画布高
+    optional int32 fps = 3;            // 动画每秒播放帧数
+    optional int32 frames = 4;         // 动画总帧数
+}
+
+// 元件（精灵）
+message SpriteEntity {
+    optional string imageKey = 1;      // 位图键名，含 .vector 后缀为矢量图层，含 .matte 后缀为遮罩图层
+    repeated FrameEntity frames = 2;   // 帧列表
+    optional string matteKey = 3;      // 被遮罩图层的 matteKey 对应其遮罩图层的 imageKey
+}
+
+// 音频
+message AudioEntity {
+    optional string audioKey = 1;      // 音频文件名
+    optional int32 startFrame = 2;     // 音频播放起始帧
+    optional int32 endFrame = 3;       // 音频播放结束帧
+    optional int32 startTime = 4;      // 音频播放起始时间（相对音频长度）
+    optional int32 totalTime = 5;      // 音频总长度
+}
+
+// 布局
+message Layout {
+    optional float x = 1;
+    optional float y = 2;
+    optional float width = 3;
+    optional float height = 4;
+}
+
+// 2D 仿射变换矩阵
+message Transform {
+    optional float a = 1;
+    optional float b = 2;
+    optional float c = 3;
+    optional float d = 4;
+    optional float tx = 5;
+    optional float ty = 6;
+}
+
+// 矢量形状
+message ShapeEntity {
+    enum ShapeType {
+        SHAPE = 0;    // 路径
+        RECT = 1;     // 矩形
+        ELLIPSE = 2;  // 椭圆
+        KEEP = 3;     // 与前帧一致
+    }
+
+    // SVG 路径参数
+    message ShapeArgs {
+        optional string d = 1;  // SVG 路径
+    }
+
+    // 矩形参数
+    message RectArgs {
+        optional float x = 1;
+        optional float y = 2;
+        optional float width = 3;
+        optional float height = 4;
+        optional float cornerRadius = 5;  // 圆角半径
+    }
+
+    // 椭圆参数
+    message EllipseArgs {
+        optional float x = 1;       // 圆中心点 X
+        optional float y = 2;       // 圆中心点 Y
+        optional float radiusX = 3; // 横向半径
+        optional float radiusY = 4; // 纵向半径
+    }
+
+    // RGBA 颜色
+    message RGBAColor {
+        optional float r = 1;
+        optional float g = 2;
+        optional float b = 3;
+        optional float a = 4;
+    }
+
+    // 渲染样式
+    message ShapeStyle {
+        enum LineCap {
+            LineCap_BUTT = 0;
+            LineCap_ROUND = 1;
+            LineCap_SQUARE = 2;
+        }
+
+        enum LineJoin {
+            LineJoin_MITER = 0;
+            LineJoin_ROUND = 1;
+            LineJoin_BEVEL = 2;
+        }
+
+        optional RGBAColor fill = 1;        // 填充色
+        optional RGBAColor stroke = 2;      // 描边色
+        optional float strokeWidth = 3;     // 描边宽
+        optional LineCap lineCap = 4;       // 线段端点样式
+        optional LineJoin lineJoin = 5;     // 线段连接样式
+        optional float miterLimit = 6;      // 尖角限制
+        optional float lineDashI = 7;       // 虚线参数 Dash
+        optional float lineDashII = 8;      // 虚线参数 Gap
+        optional float lineDashIII = 9;     // 虚线参数 Offset
+    }
+
+    optional ShapeType type = 1;        // 矢量类型
+    optional ShapeArgs shape = 2;       // 路径参数
+    optional RectArgs rect = 3;         // 矩形参数
+    optional EllipseArgs ellipse = 4;   // 椭圆参数
+    optional ShapeStyle styles = 10;    // 渲染参数
+    optional Transform transform = 11;  // 矢量图层 2D 变换矩阵
+}
+
+// 帧
+message FrameEntity {
+    optional float alpha = 1;                   // 透明度
+    optional Layout layout = 2;                 // 初始约束大小
+    optional Transform transform = 3;           // 2D 变换矩阵
+    optional string clipPath = 4;               // 遮罩路径（SVG Path）
+    repeated ShapeEntity shapes = 5;            // 矢量元素列表
+}
+
+// 顶层动画实体
+message MovieEntity {
+    optional string version = 1;                        // SVGA 格式版本号
+    optional MovieParams params = 2;                    // 动画参数
+    map<string, bytes> images = 3;                      // 位图键名 -> 位图二进制数据
+    repeated SpriteEntity sprites = 4;                  // 元素列表
+    repeated AudioEntity audios = 5;                    // 音频列表
+}
