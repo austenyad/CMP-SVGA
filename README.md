@@ -123,11 +123,15 @@ SVGAImage(
 
 ### Custom Network Loader
 
-The library uses platform-native HTTP by default (HttpURLConnection on Android, NSURLSession on iOS). You can plug in your own:
+The library uses platform-native HTTP by default (HttpURLConnection on Android, NSURLSession on iOS). You can replace it with your project's existing networking stack by implementing `SVGANetworkLoader` — it only has one method: `suspend fun download(url: String): ByteArray`.
+
+#### Android — Use your project's OkHttp
 
 ```kotlin
-// OkHttp example
-class OkHttpSVGALoader(private val client: OkHttpClient) : SVGANetworkLoader {
+// androidMain
+class AndroidSVGANetworkLoader(
+    private val client: OkHttpClient  // your existing OkHttpClient instance
+) : SVGANetworkLoader {
     override suspend fun download(url: String): ByteArray {
         val request = Request.Builder().url(url).build()
         return withContext(Dispatchers.IO) {
@@ -135,11 +139,69 @@ class OkHttpSVGALoader(private val client: OkHttpClient) : SVGANetworkLoader {
         }
     }
 }
+```
 
-// Use it
+#### iOS — Use NSURLSession or your own networking library
+
+```kotlin
+// iosMain
+class IOSSVGANetworkLoader : SVGANetworkLoader {
+    override suspend fun download(url: String): ByteArray {
+        return suspendCancellableCoroutine { continuation ->
+            val nsUrl = NSURL(string = url)
+            val request = NSURLRequest(URL = nsUrl)
+            NSURLSession.sharedSession.dataTaskWithRequest(request) { data, _, error ->
+                if (error != null) {
+                    continuation.resumeWithException(Exception(error.localizedDescription))
+                } else if (data != null) {
+                    continuation.resume(data.toByteArray())
+                } else {
+                    continuation.resumeWithException(Exception("Empty response"))
+                }
+            }.resume()
+        }
+    }
+}
+```
+
+#### Option 1: Pass directly at the call site
+
+```kotlin
+// Android
 SVGAImage(
     spec = SVGASpec.Url("https://example.com/anim.svga"),
     modifier = Modifier.size(200.dp),
-    networkLoader = OkHttpSVGALoader(okHttpClient)
+    networkLoader = AndroidSVGANetworkLoader(myOkHttpClient)
+)
+
+// iOS
+SVGAImage(
+    spec = SVGASpec.Url("https://example.com/anim.svga"),
+    modifier = Modifier.size(200.dp),
+    networkLoader = IOSSVGANetworkLoader()
+)
+```
+
+#### Option 2: Use expect/actual for transparent platform switching
+
+```kotlin
+// commonMain
+expect fun createPlatformNetworkLoader(): SVGANetworkLoader
+
+// androidMain
+actual fun createPlatformNetworkLoader(): SVGANetworkLoader {
+    return AndroidSVGANetworkLoader(AppModule.okHttpClient)
+}
+
+// iosMain
+actual fun createPlatformNetworkLoader(): SVGANetworkLoader {
+    return IOSSVGANetworkLoader()
+}
+
+// commonMain — usage
+SVGAImage(
+    spec = SVGASpec.Url("https://example.com/anim.svga"),
+    modifier = Modifier.size(200.dp),
+    networkLoader = createPlatformNetworkLoader()
 )
 ```

@@ -123,11 +123,15 @@ SVGAImage(
 
 ### 自定义网络加载器
 
-库默认使用平台原生 HTTP（Android 用 HttpURLConnection，iOS 用 NSURLSession）。你可以替换为自己的网络框架：
+库默认使用平台原生 HTTP（Android 用 HttpURLConnection，iOS 用 NSURLSession）。你可以替换为项目中已有的网络框架，只需实现 `SVGANetworkLoader` 接口，它只有一个方法：`suspend fun download(url: String): ByteArray`。
+
+#### Android 端 — 使用项目已有的 OkHttp
 
 ```kotlin
-// OkHttp 示例
-class OkHttpSVGALoader(private val client: OkHttpClient) : SVGANetworkLoader {
+// androidMain
+class AndroidSVGANetworkLoader(
+    private val client: OkHttpClient  // 项目里已有的 OkHttpClient 实例
+) : SVGANetworkLoader {
     override suspend fun download(url: String): ByteArray {
         val request = Request.Builder().url(url).build()
         return withContext(Dispatchers.IO) {
@@ -135,11 +139,69 @@ class OkHttpSVGALoader(private val client: OkHttpClient) : SVGANetworkLoader {
         }
     }
 }
+```
 
-// 使用
+#### iOS 端 — 使用 NSURLSession 或其他网络库
+
+```kotlin
+// iosMain
+class IOSSVGANetworkLoader : SVGANetworkLoader {
+    override suspend fun download(url: String): ByteArray {
+        return suspendCancellableCoroutine { continuation ->
+            val nsUrl = NSURL(string = url)
+            val request = NSURLRequest(URL = nsUrl)
+            NSURLSession.sharedSession.dataTaskWithRequest(request) { data, _, error ->
+                if (error != null) {
+                    continuation.resumeWithException(Exception(error.localizedDescription))
+                } else if (data != null) {
+                    continuation.resume(data.toByteArray())
+                } else {
+                    continuation.resumeWithException(Exception("Empty response"))
+                }
+            }.resume()
+        }
+    }
+}
+```
+
+#### 方式一：在调用处直接传入
+
+```kotlin
+// Android 端
 SVGAImage(
     spec = SVGASpec.Url("https://example.com/anim.svga"),
     modifier = Modifier.size(200.dp),
-    networkLoader = OkHttpSVGALoader(okHttpClient)
+    networkLoader = AndroidSVGANetworkLoader(myOkHttpClient)
+)
+
+// iOS 端
+SVGAImage(
+    spec = SVGASpec.Url("https://example.com/anim.svga"),
+    modifier = Modifier.size(200.dp),
+    networkLoader = IOSSVGANetworkLoader()
+)
+```
+
+#### 方式二：用 expect/actual 封装，commonMain 无需关心平台差异
+
+```kotlin
+// commonMain
+expect fun createPlatformNetworkLoader(): SVGANetworkLoader
+
+// androidMain
+actual fun createPlatformNetworkLoader(): SVGANetworkLoader {
+    return AndroidSVGANetworkLoader(AppModule.okHttpClient)
+}
+
+// iosMain
+actual fun createPlatformNetworkLoader(): SVGANetworkLoader {
+    return IOSSVGANetworkLoader()
+}
+
+// commonMain 中使用
+SVGAImage(
+    spec = SVGASpec.Url("https://example.com/anim.svga"),
+    modifier = Modifier.size(200.dp),
+    networkLoader = createPlatformNetworkLoader()
 )
 ```
